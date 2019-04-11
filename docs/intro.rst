@@ -1,3 +1,4 @@
 titre
 -----
-chwet.jpg
+
+_static/chwet.jpg

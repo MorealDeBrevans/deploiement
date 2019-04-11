@@ -1,3 +1,6 @@
+"""Ce script est à exécuter côté client, il ne contient pas de fonctions particulières à décrire. L'essentiel du fonctionnement du programme est géré côté serveur."""
+
+
 # Python program to implement client side of chat room. 
 import socket 
 import select 
