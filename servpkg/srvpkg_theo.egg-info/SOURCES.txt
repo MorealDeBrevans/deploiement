@@ -1,0 +1,6 @@
+README.md
+setup.py
+srvpkg_theo.egg-info/PKG-INFO
+srvpkg_theo.egg-info/SOURCES.txt
+srvpkg_theo.egg-info/dependency_links.txt
+srvpkg_theo.egg-info/top_level.txt

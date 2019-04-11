@@ -1,0 +1,19 @@
+Metadata-Version: 2.1
+Name: srvpkg-theo
+Version: 0.0.1
+Summary: Package du projet reseau
+Home-page: https://github.com/MorealDeBrevans/deploiement
+Author: Theophile et Marine
+Author-email: theophile.moreal-de-brevans@insa-lyon.fr
+License: UNKNOWN
+Description: # Package Reseau
+        
+        Ce package contient 2 fichiers :
+        serveur.py
+        client.py
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 2.7
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
