@@ -1,5 +1,5 @@
 # *************************** -*- Serveur.py -*- ******************************
-""" Python program to implement server side of multpiple chat rooms. 
+""" Python program to implement server side of multiple chat rooms. 
 
 Execute using Python2.7
 

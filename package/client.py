@@ -1,4 +1,10 @@
-# Python program to implement client side of chat room. 
+# *************************** -*- client.py -*- ******************************
+""" Python program to implement client side of chat room.  
+
+Execute using Python2.7
+
+See README.md for futher informations on how to use this code.
+"""
 import socket 
 import select 
 import sys 
