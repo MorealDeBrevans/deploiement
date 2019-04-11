@@ -1,0 +1,388 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>serveur &#8212; reseau 0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for serveur</h1><div class="highlight"><pre>
+<span></span><span class="c1"># *************************** -*- Serveur.py -*- ******************************</span>
+<span class="sd">&quot;&quot;&quot; Python program to implement server side of multpiple chat rooms. </span>
+
+<span class="sd">Execute using Python2.7</span>
+
+<span class="sd">See README.md for futher informations on how to use this code.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ********************** -*- Libraries importation -*- ************************</span>
+<span class="kn">import</span> <span class="nn">socket</span> 
+<span class="kn">import</span> <span class="nn">select</span> 
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">errno</span> 
+<span class="c1">#from thread import *</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
+
+
+<span class="c1"># **************************** -*- main code -*- ******************************</span>
+
+
+<span class="c1"># -*- Global variables -*-</span>
+<span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    *********************************************************</span>
+<span class="sd"> * list_of_clients : map of connections per room. </span>
+<span class="sd">       --- key : name of room ; </span>
+<span class="sd">       --- value : list of sockets</span>
+<span class="sd"> * liste_utilisateurs : list of connected user&#39;s names. </span>
+<span class="sd"> * liste_commandes : list of special commands</span>
+<span class="sd"> * list_of_conversations : map of messages per room. </span>
+<span class="sd">       --- key : name of room</span>
+<span class="sd">       --- value : deque of a list of messages and size = 20</span>
+<span class="sd">     We keep at maximum 20 messages </span>
+<span class="sd">    *********************************************************</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">list_of_clients</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hub&#39;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;Presentation&#39;</span> <span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;Blabla&#39;</span> <span class="p">:</span> <span class="p">[]}</span>
+
+<span class="n">liste_utilisateurs</span><span class="o">=</span><span class="p">[]</span>
+
+<span class="n">liste_commandes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;changernom&#39;</span><span class="p">,</span> <span class="s1">&#39;changersalon&#39;</span><span class="p">,</span> <span class="s1">&#39;creersalon&#39;</span><span class="p">,</span> <span class="s1">&#39;listeutilisateurs</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;help</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;exit</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+
+<span class="n">list_of_conversations</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hub&#39;</span> <span class="p">:</span> <span class="n">deque</span><span class="p">([],</span> <span class="mi">20</span><span class="p">),</span> <span class="s1">&#39;Presentation&#39;</span> <span class="p">:</span> <span class="n">deque</span><span class="p">([],</span> <span class="mi">20</span><span class="p">),</span> <span class="s1">&#39;Blabla&#39;</span> <span class="p">:</span> <span class="n">deque</span><span class="p">([],</span> <span class="mi">20</span><span class="p">)}</span> 
+
+<span class="c1"># -*- Functions -*-</span>
+
+
+<div class="viewcode-block" id="broadcast"><a class="viewcode-back" href="../source/serveur.html#serveur.broadcast">[docs]</a><span class="k">def</span> <span class="nf">broadcast</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">chan</span><span class="p">):</span> 
+	<span class="sd">&quot;&quot;&quot;Broadcast the message to all clients except the one who sent the message.</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	message : str</span>
+<span class="sd">		message to send.</span>
+<span class="sd">	connection : socket</span>
+<span class="sd">		socket of user sending message.</span>
+<span class="sd">	chan : str</span>
+<span class="sd">		name of room.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">for</span> <span class="n">clients</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="p">[</span><span class="n">chan</span><span class="p">]:</span> 
+		<span class="k">if</span> <span class="n">clients</span><span class="o">!=</span><span class="n">connection</span><span class="p">:</span> 
+			<span class="k">try</span><span class="p">:</span> 
+				<span class="n">clients</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> 
+			<span class="k">except</span><span class="p">:</span> <span class="c1"># if the link is broken, we remove the client</span>
+				<span class="n">clients</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+				<span class="n">remove</span><span class="p">(</span><span class="n">clients</span><span class="p">)</span>  </div>
+
+
+<div class="viewcode-block" id="changerchan"><a class="viewcode-back" href="../source/serveur.html#serveur.changerchan">[docs]</a><span class="k">def</span> <span class="nf">changerchan</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ancien</span><span class="p">,</span> <span class="n">nouveau</span><span class="p">)</span> <span class="p">:</span>
+	<span class="sd">&quot;&quot;&quot;Removes the old connection in one room and create a new one in the chosen room.</span>
+<span class="sd">	 </span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	conne : socket</span>
+<span class="sd">		socket of the user who wants to change room.</span>
+<span class="sd">	name : str</span>
+<span class="sd">		name of the user that appears on terminal.</span>
+<span class="sd">	ancien : str</span>
+<span class="sd">		old room.</span>
+<span class="sd">	nouveau : str</span>
+<span class="sd">		new room.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">remove</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">ancien</span><span class="p">)</span>
+	<span class="n">list_of_clients</span><span class="p">[</span><span class="n">nouveau</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+	<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Bienvenue dans &quot;</span><span class="o">+</span><span class="n">nouveau</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">list_of_conversations</span><span class="p">[</span><span class="n">nouveau</span><span class="p">]:</span> <span class="c1">#displays the last 20 messages</span>
+		<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">message</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+	<span class="n">broadcast</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; est entre dans le salon&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">nouveau</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="connected_users"><a class="viewcode-back" href="../source/serveur.html#serveur.connected_users">[docs]</a><span class="k">def</span> <span class="nf">connected_users</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;Returns a display of users present on server.</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	str</span>
+<span class="sd">		A string listing all connected users.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">res</span> <span class="o">=</span><span class="s2">&quot;&quot;</span>
+	<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">liste_utilisateurs</span><span class="p">:</span>
+		<span class="n">res</span> <span class="o">=</span> <span class="n">res</span> <span class="o">+</span><span class="s2">&quot; - &quot;</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+	<span class="n">res</span><span class="o">=</span><span class="n">res</span><span class="o">+</span><span class="s2">&quot; sont actuellement connectes</span><span class="se">\n</span><span class="s2">&quot;</span>
+	<span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="remove"><a class="viewcode-back" href="../source/serveur.html#serveur.remove">[docs]</a><span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">chan</span><span class="p">):</span> 
+	<span class="sd">&quot;&quot;&quot;Removes the user from the list of clients (in a specific room)</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	connection : socket</span>
+<span class="sd">		socket object of user that needs to be removed</span>
+<span class="sd">	chan : str</span>
+<span class="sd">		name of room</span>
+<span class="sd">	&quot;&quot;&quot;</span>  
+	<span class="k">if</span> <span class="n">connection</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="p">[</span><span class="n">chan</span><span class="p">]:</span> 
+		<span class="n">list_of_clients</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span> </div>
+
+
+<div class="viewcode-block" id="remove_from_server"><a class="viewcode-back" href="../source/serveur.html#serveur.remove_from_server">[docs]</a><span class="k">def</span> <span class="nf">remove_from_server</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">chan</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span> 
+	<span class="sd">&quot;&quot;&quot;Removes the client from the list of clients and the list of users --- To use for users leaving the server</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	connection : socket</span>
+<span class="sd">		socket object of user that needs to be removed</span>
+<span class="sd">	chan : str</span>
+<span class="sd">		name of room</span>
+<span class="sd">	name : str</span>
+<span class="sd">		name of user that needs to be removed</span>
+<span class="sd">	&quot;&quot;&quot;</span>  
+	<span class="k">if</span> <span class="n">connection</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="p">[</span><span class="n">chan</span><span class="p">]:</span> 
+		<span class="n">list_of_clients</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span> 
+	<span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">liste_utilisateurs</span><span class="p">:</span>
+		<span class="n">liste_utilisateurs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="clientthread"><a class="viewcode-back" href="../source/serveur.html#serveur.clientthread">[docs]</a><span class="k">def</span> <span class="nf">clientthread</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span> 
+	<span class="sd">&quot;&quot;&quot;Manages the connection of a specific user</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	conn : socket</span>
+<span class="sd">		socket object of the new connected user</span>
+<span class="sd">	addr : str</span>
+<span class="sd">		IP address of the new connected user</span>
+<span class="sd">	&quot;&quot;&quot;</span>  
+	<span class="n">name</span><span class="o">=</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Choissisez un nom :</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># First, a user should choose a name</span>
+	<span class="n">name</span><span class="o">=</span><span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+	<span class="k">while</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">liste_utilisateurs</span> <span class="p">:</span> <span class="c1"># Cannot choose an already chosen name </span>
+		<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Nom deja utilise</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+		<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Choissisez un nom :</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+		<span class="n">name</span><span class="o">=</span><span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+		
+	<span class="n">liste_utilisateurs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="c1"># add the new user to the list of users</span>
+	<span class="n">liste_utilisateurs</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span> 
+
+
+	<span class="c1"># Then, informations on the state of the server are sent</span>
+	<span class="c1"># sends a message to the client whose user object is connected</span>
+	<span class="c1"># The user must choose a room</span>
+	<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Bienvenue dans le Hub !</span><span class="se">\n</span><span class="s2">Il y a actuellement &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">liste_utilisateurs</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; utilisateurs connecte(s) : </span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span> <span class="n">connected_users</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Choissisez un salon : </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+	<span class="n">liste_chan</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+	<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
+		<span class="n">liste_chan</span><span class="o">+=</span><span class="n">s</span><span class="o">+</span><span class="s1">&#39;;&#39;</span>
+	<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">liste_chan</span><span class="p">)</span>
+
+	<span class="n">chan</span><span class="o">=</span><span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+	<span class="k">while</span> <span class="n">chan</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span> <span class="c1"># Only exisiting room can be chosen</span>
+		<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Salon inexistant</span><span class="se">\n</span><span class="s2">Choisissez un salon : </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+		<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">liste_chan</span><span class="p">)</span>
+		<span class="n">chan</span><span class="o">=</span><span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+	<span class="n">changerchan</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Hub&#39;</span><span class="p">,</span> <span class="n">chan</span><span class="p">)</span> <span class="c1"># See l.278 : a user is first placed automatically in hub</span>
+
+	<span class="k">while</span> <span class="kc">True</span><span class="p">:</span> 
+		<span class="k">try</span><span class="p">:</span> 
+			<span class="n">message</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)</span> <span class="c1"># In case a user send a message</span>
+			<span class="k">if</span> <span class="n">message</span><span class="p">:</span> 
+			<span class="c1">#prints on the terminal :  message and name of the user</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;&gt; &quot;</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span> 
+				<span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="c1"># In case the message is a special command</span>
+					<span class="n">comm</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+					<span class="k">if</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">liste_commandes</span> <span class="p">:</span>
+						<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Commande inconnue ou incomplete</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+					<span class="k">else</span> <span class="p">:</span>
+						<span class="k">if</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;changernom&#39;</span> <span class="p">:</span>  <span class="c1">#change name command</span>
+						<span class="c1"># parcoure la liste des utilsateurs</span>
+							<span class="n">nv</span><span class="o">=</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+							<span class="k">if</span> <span class="n">nv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">liste_utilisateurs</span> <span class="p">:</span>
+								<span class="n">liste_utilisateurs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="c1">#remove the old name of the list of users</span>
+								<span class="n">liste_utilisateurs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nv</span><span class="p">)</span>  <span class="c1">#add the new name to the list of users</span>
+								<span class="n">broadcast</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; a change son nom en &quot;</span><span class="o">+</span><span class="n">nv</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">chan</span><span class="p">)</span>
+								<span class="n">name</span><span class="o">=</span><span class="n">nv</span>
+							<span class="k">else</span> <span class="p">:</span>
+								<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Nom deja utilise</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+						<span class="k">elif</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;changersalon&#39;</span> <span class="p">:</span> <span class="c1">#change room command</span>
+							<span class="k">if</span> <span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
+								<span class="n">changerchan</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">chan</span><span class="p">,</span> <span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+								<span class="n">chan</span><span class="o">=</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+						<span class="k">elif</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;creersalon&#39;</span> <span class="p">:</span> <span class="c1">#create room command</span>
+							<span class="k">if</span> <span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">list_of_clients</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
+								<span class="n">list_of_clients</span><span class="p">[</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">=</span><span class="p">[]</span>
+								<span class="n">list_of_conversations</span><span class="p">[</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">=</span><span class="n">deque</span><span class="p">([],</span><span class="mi">20</span><span class="p">)</span>
+								<span class="n">changerchan</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">chan</span><span class="p">,</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+								<span class="n">chan</span><span class="o">=</span><span class="n">comm</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+							<span class="k">else</span><span class="p">:</span>
+								<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Ce salon existe deja&quot;</span><span class="p">)</span>
+						<span class="k">elif</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;listeutilisateurs</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="p">:</span> <span class="c1">#list of users command</span>
+							<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">connected_users</span><span class="p">())</span>
+						<span class="k">elif</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;help</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="p">:</span> <span class="c1">#help command</span>
+							<span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Bienvenue dans l&#39;aide du chat. Ici, tu peux naviguer dans plusieurs salons et discuter avec les personnes connectees a ce serveur.</span><span class="se">\n\n</span><span class="s2">Liste des commandes disponibles :</span><span class="se">\n</span><span class="s2">-/changernom &lt;nom&gt; : permet de changer de nom dans le serveur</span><span class="se">\n</span><span class="s2">-/changersalon &lt;nom_du_salon&gt; : permet de se deplacer dans le salon choisi</span><span class="se">\n</span><span class="s2">-/creersalon &lt;name_of_new_room&gt; : cree un nouveau salon dans lequel tu est place directement. Si ce salon existe deja, tu seras place automatiquement dans le salon portant ce nom.</span><span class="se">\n</span><span class="s2">-listeutilisateurs : permet d&#39;obtenir les noms des utilisateurs connectes</span><span class="se">\n</span><span class="s2">-help</span><span class="se">\n\n</span><span class="s2">Pour plus de details sur l&#39;utilisation, veuillez vous referer au README.md</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+						<span class="k">elif</span> <span class="n">comm</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;exit</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="p">:</span> <span class="c1">#exit command</span>
+						  <span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Etes vous surs de vouloir quitter ? [y/n]&quot;</span><span class="p">)</span>
+						  <span class="n">resp</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)</span>
+						  <span class="k">while</span> <span class="n">resp</span><span class="o">!=</span><span class="s1">&#39;y</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="ow">and</span> <span class="n">resp</span><span class="o">!=</span><span class="s1">&#39;n</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">:</span>
+						    <span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Etes vous surs de vouloir quitter ? [y/n]&quot;</span><span class="p">)</span>
+						    <span class="n">resp</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">2048</span><span class="p">)</span>
+						  <span class="k">if</span> <span class="n">resp</span> <span class="o">==</span> <span class="s1">&#39;y</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">:</span>
+						    <span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;DisconnectNow&quot;</span><span class="p">)</span>
+						    <span class="c1">#conn.close()</span>
+						    <span class="n">remove_from_server</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chan</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+						  <span class="k">else</span><span class="p">:</span>
+						    <span class="k">continue</span>
+				<span class="k">else</span> <span class="p">:</span>
+				<span class="c1"># Calls broadcast function to send message to all and saves the message in the list</span>
+					<span class="n">message_to_send</span> <span class="o">=</span> <span class="s2">&quot;&lt;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;&gt; &quot;</span> <span class="o">+</span> <span class="n">message</span> 
+					<span class="n">broadcast</span><span class="p">(</span><span class="n">message_to_send</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">chan</span><span class="p">)</span> 
+					<span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_conversations</span><span class="p">[</span><span class="n">chan</span><span class="p">])</span><span class="o">==</span><span class="mi">20</span><span class="p">):</span>
+						<span class="n">list_of_conversations</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+					<span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&lt;&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;&gt; &quot;</span> <span class="o">+</span> <span class="n">message</span>
+					<span class="n">list_of_conversations</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+			<span class="k">else</span><span class="p">:</span> 
+				<span class="c1">#remove connection when it&#39;s broken</span>
+				<span class="n">remove_from_server</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">chan</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> 
+				<span class="n">broadcast</span><span class="p">(</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; a quitte le salon&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">chan</span><span class="p">)</span>
+				<span class="k">break</span>
+		<span class="k">except</span> <span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+			<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+				<span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;errno is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+				<span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EPIPE</span><span class="p">:</span>
+			  <span class="c1">#remote peer disconnected</span>
+					<span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Detected connection disconnect&quot;</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="k">pass</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;socket error&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+			<span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+			<span class="k">break</span></div>
+
+<span class="c1"># ***************************** end functions *********************************</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+	<span class="c1"># socket creation</span>
+	<span class="c1">#  -- uses AF_INET domain and TCP protocol</span>
+	<span class="n">server</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span> 
+	<span class="n">server</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_BROADCAST</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+	<span class="n">IP_address</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c1">#sets IP address</span>
+	 
+	<span class="n">Port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="c1">#sets port number</span>
+
+	<span class="c1">#The client must be aware of the IP address and port number parameters </span>
+	<span class="n">server</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">Port</span><span class="p">))</span> 
+
+	<span class="c1">#listens for &quot;100&quot; active connections</span>
+	<span class="n">server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> 
+
+
+	<span class="c1"># checks whether IP address and port number have been provided </span>
+	<span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">	****************************</span>
+<span class="sd">	sys.argv[0] = file name</span>
+<span class="sd">	sys.argv[1] = IP address</span>
+<span class="sd">	sys.argv[2] = port number</span>
+<span class="sd">	****************************</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span> 
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Entrez : script, addresse IP, numero de port&quot;</span><span class="p">)</span>
+		<span class="n">exit</span><span class="p">()</span> 
+
+	<span class="c1">#Sends a message when the server is in place</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Your server is up.&quot;</span><span class="p">)</span>
+
+
+	<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+		<span class="sd">&quot;&quot;&quot;Accepts a connection request and stores two parameters, </span>
+<span class="sd">		socket object for that user, and IP address of the client&quot;&quot;&quot;</span>
+		<span class="n">conn</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+
+		<span class="c1">#Maintains a list of clients in the chatroom</span>
+		<span class="n">list_of_clients</span><span class="p">[</span><span class="s1">&#39;Hub&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+
+		<span class="c1"># prints the address of the user that just connected </span>
+		<span class="nb">print</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; connected&quot;</span><span class="p">)</span>
+
+		<span class="c1"># creates and individual thread for every user that connects </span>
+		<span class="n">start_new_thread</span><span class="p">(</span><span class="n">clientthread</span><span class="p">,(</span><span class="n">conn</span><span class="p">,</span><span class="n">addr</span><span class="p">))</span>	 
+
+	<span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+	<span class="n">server</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, theo.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

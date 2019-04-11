@@ -1,0 +1,197 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>serveur module &#8212; reseau 0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="package" href="modules.html" />
+    <link rel="prev" title="client module" href="client.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-serveur">
+<span id="serveur-module"></span><h1>serveur module<a class="headerlink" href="#module-serveur" title="Permalink to this headline">¶</a></h1>
+<p>Python program to implement server side of multpiple chat rooms.</p>
+<p>Execute using Python2.7</p>
+<p>See README.md for futher informations on how to use this code.</p>
+<dl class="function">
+<dt id="serveur.broadcast">
+<code class="descclassname">serveur.</code><code class="descname">broadcast</code><span class="sig-paren">(</span><em>message</em>, <em>connection</em>, <em>chan</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#broadcast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Broadcast the message to all clients except the one who sent the message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message</strong> (<em>str</em>) – message to send.</li>
+<li><strong>connection</strong> (<em>socket</em>) – socket of user sending message.</li>
+<li><strong>chan</strong> (<em>str</em>) – name of room.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="serveur.changerchan">
+<code class="descclassname">serveur.</code><code class="descname">changerchan</code><span class="sig-paren">(</span><em>conn</em>, <em>name</em>, <em>ancien</em>, <em>nouveau</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#changerchan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.changerchan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the old connection in one room and create a new one in the chosen room.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>conne</strong> (<em>socket</em>) – socket of the user who wants to change room.</li>
+<li><strong>name</strong> (<em>str</em>) – name of the user that appears on terminal.</li>
+<li><strong>ancien</strong> (<em>str</em>) – old room.</li>
+<li><strong>nouveau</strong> (<em>str</em>) – new room.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="serveur.clientthread">
+<code class="descclassname">serveur.</code><code class="descname">clientthread</code><span class="sig-paren">(</span><em>conn</em>, <em>addr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#clientthread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.clientthread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manages the connection of a specific user
+:param conn: socket object of the new connected user
+:type conn: socket
+:param addr: IP address of the new connected user
+:type addr: str</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="serveur.connected_users">
+<code class="descclassname">serveur.</code><code class="descname">connected_users</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#connected_users"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.connected_users" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a display of users present on server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A string listing all connected users.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="serveur.remove">
+<code class="descclassname">serveur.</code><code class="descname">remove</code><span class="sig-paren">(</span><em>connection</em>, <em>chan</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the user from the list of clients (in a specific room)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>connection</strong> (<em>socket</em>) – socket object of user that needs to be removed</li>
+<li><strong>chan</strong> (<em>str</em>) – name of room</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="serveur.remove_from_server">
+<code class="descclassname">serveur.</code><code class="descname">remove_from_server</code><span class="sig-paren">(</span><em>connection</em>, <em>chan</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/serveur.html#remove_from_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serveur.remove_from_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the client from the list of clients and the list of users — To use for users leaving the server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>connection</strong> (<em>socket</em>) – socket object of user that needs to be removed</li>
+<li><strong>chan</strong> (<em>str</em>) – name of room</li>
+<li><strong>name</strong> (<em>str</em>) – name of user that needs to be removed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="client.html" title="previous chapter">client module</a></li>
+      <li>Next: <a href="modules.html" title="next chapter">package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, theo.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/source/serveur.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

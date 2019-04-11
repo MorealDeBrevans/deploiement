@@ -11,27 +11,12 @@ import socket
 import select 
 import sys
 import errno 
-from thread import *
+#from thread import *
 from collections import deque
 
 
 # **************************** -*- main code -*- ******************************
 
-# socket creation
-#  -- uses AF_INET domain and TCP protocol
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-
-IP_address = str(sys.argv[1]) #sets IP address
- 
-Port = int(sys.argv[2]) #sets port number
-
-#The client must be aware of the IP address and port number parameters 
-server.bind(('', Port)) 
-
-#listens for "100" active connections
-server.listen(100) 
 
 # -*- Global variables -*-
 """ 
@@ -266,6 +251,23 @@ def clientthread(conn, addr):
 # ***************************** end functions *********************************
 
 if __name__ == "__main__":
+	# socket creation
+	#  -- uses AF_INET domain and TCP protocol
+	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+	server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+
+	IP_address = str(sys.argv[1]) #sets IP address
+	 
+	Port = int(sys.argv[2]) #sets port number
+
+	#The client must be aware of the IP address and port number parameters 
+	server.bind(('', Port)) 
+
+	#listens for "100" active connections
+	server.listen(100) 
+
+
 	# checks whether IP address and port number have been provided 
 	""" 
 	****************************
