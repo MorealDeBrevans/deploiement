@@ -1,7 +1,10 @@
-"""Ce script est à exécuter côté client, il ne contient pas de fonctions particulières à décrire. L'essentiel du fonctionnement du programme est géré côté serveur."""
+# *************************** -*- client.py -*- ******************************
+""" Python program to implement client side of chat room.  
 
+Execute using Python2.7
 
-# Python program to implement client side of chat room. 
+See README.md for futher informations on how to use this code.
+"""
 import socket 
 import select 
 import sys 
